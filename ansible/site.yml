@@ -26,15 +26,15 @@
 
   post_tasks:
     - name: Display deployment summary
-      debug:
+      ansible.builtin.debug:
         msg: |
           Wazuh SIEM Deployment Complete!
-          
+
           Access Points:
           - Dashboard: https://{{ dashboard_ip }}:5601 (admin / {{ dashboard_password }})
           - Manager API: https://{{ manager_ip }}:55000 (wazuh-wui / {{ wazuh_api_password }})
           - Indexer: https://{{ indexer_ip }}:9200 (admin / {{ indexer_admin_password }})
-          
+
           Next Steps:
           1. Import dashboards from ../dashboards/*.ndjson
           2. Enroll additional agents with ../scripts/enroll-agent.sh

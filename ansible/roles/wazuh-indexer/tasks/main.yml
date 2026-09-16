@@ -1,6 +1,6 @@
 ---
 - name: Install dependencies
-  apt:
+  ansible.builtin.apt:
     name:
       - curl
       - gnupg2
@@ -10,18 +10,18 @@
     update_cache: true
 
 - name: Add Wazuh repository key
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
     state: present
 
 - name: Add Wazuh repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
     state: present
     filename: wazuh
 
 - name: Install Wazuh Indexer
-  apt:
+  ansible.builtin.apt:
     name: "wazuh-indexer={{ wazuh_version }}-1"
     state: present
     update_cache: true
@@ -29,7 +29,7 @@
 - name: Generate certificates for Indexer
   block:
     - name: Create certs directory
-      file:
+      ansible.builtin.file:
         path: /etc/wazuh-indexer/certs
         state: directory
         mode: '0750'
@@ -37,20 +37,21 @@
         group: wazuh-indexer
 
     - name: Download cert generation tool
-      get_url:
+      ansible.builtin.get_url:
         url: https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-indexer/wazuh-indexer-certs-tool
         dest: /usr/local/bin/wazuh-indexer-certs-tool
         mode: '0755'
 
     - name: Generate Indexer certificates
-      command: /usr/local/bin/wazuh-indexer-certs-tool -A -n {{ indexer_node_name }} -o /etc/wazuh-indexer/certs
+      ansible.builtin.command: /usr/local/bin/wazuh-indexer-certs-tool -A -n {{ indexer_node_name }} -o /etc/wazuh-indexer/certs
       args:
         creates: /etc/wazuh-indexer/certs/admin.pem
       become: true
       become_user: wazuh-indexer
+      changed_when: false
 
 - name: Configure OpenSearch (indexer)
-  template:
+  ansible.builtin.template:
     src: opensearch.yml.j2
     dest: /etc/wazuh-indexer/opensearch.yml
     owner: wazuh-indexer
@@ -59,7 +60,7 @@
   notify: Restart Wazuh Indexer
 
 - name: Configure JVM options
-  template:
+  ansible.builtin.template:
     src: jvm.options.j2
     dest: /etc/wazuh-indexer/jvm.options
     owner: wazuh-indexer
@@ -68,7 +69,7 @@
   notify: Restart Wazuh Indexer
 
 - name: Configure internal users
-  template:
+  ansible.builtin.template:
     src: internal_users.yml.j2
     dest: /etc/wazuh-indexer/internal_users.yml
     owner: wazuh-indexer
@@ -77,14 +78,14 @@
   notify: Restart Wazuh Indexer
 
 - name: Enable and start Wazuh Indexer
-  systemd:
+  ansible.builtin.systemd:
     name: wazuh-indexer
     enabled: true
     state: started
     daemon_reload: true
 
 - name: Wait for Indexer to be ready
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ indexer_ip }}:9200/_cluster/health"
     user: admin
     password: "{{ indexer_admin_password }}"
@@ -96,22 +97,24 @@
   delay: 10
 
 - name: Initialize security plugin
-  command: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/plugins/opensearch-security/securityconfig/ -nhnv -cacert /etc/wazuh-indexer/certs/root-ca.pem -cert /etc/wazuh-indexer/certs/admin.pem -key /etc/wazuh-indexer/certs/admin-key.pem
+  ansible.builtin.command: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/plugins/opensearch-security/securityconfig/ -nhnv -cacert /etc/wazuh-indexer/certs/root-ca.pem -cert /etc/wazuh-indexer/certs/admin.pem -key /etc/wazuh-indexer/certs/admin-key.pem
   args:
     creates: /var/lib/wazuh-indexer/.security_initialized
   become: true
   become_user: wazuh-indexer
   notify: Restart Wazuh Indexer
+  changed_when: false
 
 - name: Mark security as initialized
-  file:
+  ansible.builtin.file:
     path: /var/lib/wazuh-indexer/.security_initialized
     state: touch
     owner: wazuh-indexer
     group: wazuh-indexer
+    mode: '0644'
 
 - name: Create index template for Wazuh
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ indexer_ip }}:9200/_index_template/wazuh-template"
     method: PUT
     user: admin
@@ -124,7 +127,7 @@
   when: indexer_health.json.status in ['green', 'yellow']
 
 - name: Configure ILM policy
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ indexer_ip }}:9200/_ilm/policy/wazuh-ilm-policy"
     method: PUT
     user: admin
@@ -139,7 +142,7 @@
 - name: Configure snapshot repository (optional)
   block:
     - name: Create backup directory
-      file:
+      ansible.builtin.file:
         path: /mnt/backups/wazuh
         state: directory
         mode: '0750'
@@ -147,7 +150,7 @@
         group: wazuh-indexer
 
     - name: Register snapshot repository
-      uri:
+      ansible.builtin.uri:
         url: "https://{{ indexer_ip }}:9200/_snapshot/wazuh-backup"
         method: PUT
         user: admin
@@ -164,7 +167,7 @@
   when: backup_enabled | default(false)
 
 - name: Display Indexer info
-  debug:
+  ansible.builtin.debug:
     msg: |
       Wazuh Indexer deployed successfully!
       - URL: https://{{ indexer_ip }}:9200

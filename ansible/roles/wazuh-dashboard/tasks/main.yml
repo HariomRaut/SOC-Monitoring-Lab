@@ -1,6 +1,6 @@
 ---
 - name: Install dependencies
-  apt:
+  ansible.builtin.apt:
     name:
       - curl
       - gnupg2
@@ -10,24 +10,24 @@
     update_cache: true
 
 - name: Add Wazuh repository key
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
     state: present
 
 - name: Add Wazuh repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
     state: present
     filename: wazuh
 
 - name: Install Wazuh Dashboard
-  apt:
+  ansible.builtin.apt:
     name: "wazuh-dashboard={{ wazuh_version }}-1"
     state: present
     update_cache: true
 
 - name: Create certificates directory
-  file:
+  ansible.builtin.file:
     path: /etc/wazuh-dashboard/certs
     state: directory
     mode: '0750'
@@ -35,7 +35,7 @@
     group: wazuh-dashboard
 
 - name: Copy Indexer CA cert to Dashboard
-  copy:
+  ansible.builtin.copy:
     src: "{{ playbook_dir }}/roles/wazuh-indexer/templates/root-ca.pem"
     dest: /etc/wazuh-dashboard/certs/root-ca.pem
     owner: wazuh-dashboard
@@ -48,20 +48,21 @@
 - name: Generate Dashboard certificates
   block:
     - name: Download cert generation tool
-      get_url:
+      ansible.builtin.get_url:
         url: https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-dashboard/wazuh-dashboard-certs-tool
         dest: /usr/local/bin/wazuh-dashboard-certs-tool
         mode: '0755'
 
     - name: Generate Dashboard certificates
-      command: /usr/local/bin/wazuh-dashboard-certs-tool -A -n {{ inventory_hostname }} -o /etc/wazuh-dashboard/certs
+      ansible.builtin.command: /usr/local/bin/wazuh-dashboard-certs-tool -A -n {{ inventory_hostname }} -o /etc/wazuh-dashboard/certs
       args:
         creates: /etc/wazuh-dashboard/certs/{{ inventory_hostname }}.pem
       become: true
       become_user: wazuh-dashboard
+      changed_when: false
 
 - name: Configure Wazuh Dashboard
-  template:
+  ansible.builtin.template:
     src: opensearch_dashboards.yml.j2
     dest: /etc/wazuh-dashboard/opensearch_dashboards.yml
     owner: wazuh-dashboard
@@ -70,14 +71,14 @@
   notify: Restart Wazuh Dashboard
 
 - name: Enable and start Wazuh Dashboard
-  systemd:
+  ansible.builtin.systemd:
     name: wazuh-dashboard
     enabled: true
     state: started
     daemon_reload: true
 
 - name: Wait for Dashboard to be ready
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ dashboard_ip }}:5601/api/status"
     validate_certs: false
     status_code: 200
@@ -87,7 +88,7 @@
   delay: 10
 
 - name: Display Dashboard info
-  debug:
+  ansible.builtin.debug:
     msg: |
       Wazuh Dashboard deployed successfully!
       - URL: https://{{ dashboard_ip }}:5601
