@@ -97,7 +97,13 @@
   delay: 10
 
 - name: Initialize security plugin
-  ansible.builtin.command: /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/plugins/opensearch-security/securityconfig/ -nhnv -cacert /etc/wazuh-indexer/certs/root-ca.pem -cert /etc/wazuh-indexer/certs/admin.pem -key /etc/wazuh-indexer/certs/admin-key.pem
+  ansible.builtin.command: >
+    /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh
+    -cd /usr/share/wazuh-indexer/plugins/opensearch-security/securityconfig/
+    -nhnv
+    -cacert /etc/wazuh-indexer/certs/root-ca.pem
+    -cert /etc/wazuh-indexer/certs/admin.pem
+    -key /etc/wazuh-indexer/certs/admin-key.pem
   args:
     creates: /var/lib/wazuh-indexer/.security_initialized
   become: true
@@ -140,6 +146,7 @@
   when: indexer_health.json.status in ['green', 'yellow']
 
 - name: Configure snapshot repository (optional)
+  when: backup_enabled | default(false)
   block:
     - name: Create backup directory
       ansible.builtin.file:
@@ -164,7 +171,6 @@
           settings:
             location: /mnt/backups/wazuh
             compress: true
-  when: backup_enabled | default(false)
 
 - name: Display Indexer info
   ansible.builtin.debug:

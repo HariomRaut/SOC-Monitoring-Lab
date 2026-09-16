@@ -314,10 +314,10 @@ sudo /var/ossec/bin/wazuh-logtest
 
 ## References
 
-- [Wazuh Rules Syntax](https://documentation.wazuh.com/current/user-manual/ruleset/rules-syntax.html)
+- [Wazuh Rules Syntax](https://documentation.wazuh.com/current/user-manual/ruleset/rules-syntax/)
 - [MITRE ATT&CK](https://attack.mitre.org/)
 - [Sigma Rules](https://sigmahq.io/) — Convert to Wazuh format
-- [Built-in Rule IDs](https://documentation.wazuh.com/current/user-manual/ruleset/ruleset.html)
+- [Built-in Rule IDs](https://documentation.wazuh.com/current/user-manual/ruleset/ruleset/)
 
 ---
 

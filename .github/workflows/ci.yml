@@ -96,10 +96,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check for broken links
+      - name: Check for broken links (internal only)
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --verbose --max-concurrency 10 docs/
+          args: --verbose --max-concurrency 10 --exclude-mail --no-progress docs/
+          fail: true
 
       - name: Validate Mermaid diagrams
         run: |

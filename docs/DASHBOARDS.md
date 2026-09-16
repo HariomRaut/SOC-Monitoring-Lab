@@ -246,7 +246,7 @@ curl -k -X GET "https://10.10.10.12:5601/api/saved_objects/_export" \
 ## References
 
 - [OpenSearch Dashboards Docs](https://opensearch.org/docs/latest/dashboards/)
-- [Wazuh Dashboard Guide](https://documentation.wazuh.com/current/user-manual/dashboard/index.html)
+- [Wazuh Dashboard Guide](https://documentation.wazuh.com/current/user-manual/dashboard/)
 - [Lens Visualization](https://opensearch.org/docs/latest/dashboards/visualize/lens/)
 
 ---
