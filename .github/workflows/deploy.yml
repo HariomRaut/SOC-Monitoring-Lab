@@ -6,9 +6,9 @@ on:
     inputs:
       environment:
         description: 'Deployment environment'
+        type: choice
         required: true
         default: 'staging'
-        type: choice
         options:
           - staging
           - production
@@ -40,14 +40,14 @@ jobs:
             -e "ansible_user=${{ secrets.ANSIBLE_USER }}" \
             -e "ansible_become_pass=${{ secrets.ANSIBLE_BECOME_PASS }}"
         env:
-          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_HOST_KEY_CHECKING: false
 
       - name: Verify deployment
         run: |
           ./scripts/health-check.sh
         env:
-          MANAGER_IP: ${{ secrets.MANAGER_IP }}
-          INDEXER_IP: ${{ secrets.INDEXER_IP }}
-          DASHBOARD_IP: ${{ secrets.DASHBOARD_IP }}
-          WUI_PASS: ${{ secrets.WUI_PASS }}
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
+          DASHBOARD_IP: ${{ secrets.DASHBOARD_IP }}
+          INDEXER_IP: ${{ secrets.INDEXER_IP }}
+          MANAGER_IP: ${{ secrets.MANAGER_IP }}
+          WUI_PASS: ${{ secrets.WUI_PASS }}

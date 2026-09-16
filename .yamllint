@@ -23,7 +23,8 @@ rules:
   braces:
     min-spaces-inside: 0
     max-spaces-inside: 0
-  key-ordering: {}
+  key-ordering:
+    level: disable
   truthy:
     allowed-values: ["true", "false"]
     check-keys: false

@@ -130,8 +130,8 @@ jobs:
           echo "Documentation ready for GitHub Pages (served from docs/ folder)"
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
@@ -140,8 +140,8 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [lint-and-validate, test-ansible-syntax, validate-documentation]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
