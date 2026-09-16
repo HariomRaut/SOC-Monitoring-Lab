@@ -1,0 +1,29 @@
+extends: default
+rules:
+  line-length:
+    max: 120
+    level: warning
+  document-start:
+    level: warning
+  trailing-spaces:
+    level: warning
+  empty-lines:
+    max: 2
+    max-start: 1
+    max-end: 1
+  empty-values:
+    forbid-in-block-mappings: true
+    forbid-in-flow-mappings: true
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  key-ordering: {}
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
