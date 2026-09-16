@@ -1,3 +1,4 @@
+---
 name: CI/CD Pipeline
 
 on:
@@ -42,9 +43,9 @@ jobs:
 
       - name: Lint YAML files
         run: |
-          yamllint .github/workflows/
-          yamllint ansible/
-          yamllint docs/
+          yamllint -c .yamllint .github/workflows/
+          yamllint -c .yamllint ansible/
+          yamllint -c .yamllint docs/
 
       - name: Lint Markdown files
         run: |
@@ -99,7 +100,13 @@ jobs:
       - name: Check for broken links (internal only)
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --verbose --max-concurrency 10 --exclude-mail --no-progress --exclude "https://documentation.wazuh.com/*" --exclude "https://opensearch.org/*" --exclude "https://attack.mitre.org/*" --exclude "https://sigmahq.io/*" docs/
+          args: |
+            --verbose --max-concurrency 10 --exclude-mail --no-progress
+            --exclude "https://documentation.wazuh.com/*"
+            --exclude "https://opensearch.org/*"
+            --exclude "https://attack.mitre.org/*"
+            --exclude "https://sigmahq.io/*"
+            docs/
           fail: true
 
       - name: Validate Mermaid diagrams
