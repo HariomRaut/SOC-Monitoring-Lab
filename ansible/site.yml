@@ -39,5 +39,5 @@
           1. Import dashboards from ../dashboards/*.ndjson
           2. Enroll additional agents with ../scripts/enroll-agent.sh
           3. Run attack scenarios from ../attack-scenarios/
-      delegate_to: localhost
       run_once: true
+      delegate_to: localhost

@@ -99,7 +99,7 @@ jobs:
       - name: Check for broken links (internal only)
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --verbose --max-concurrency 10 --exclude-mail --no-progress docs/
+          args: --verbose --max-concurrency 10 --exclude-mail --no-progress --exclude "https://documentation.wazuh.com/*" --exclude "https://opensearch.org/*" --exclude "https://attack.mitre.org/*" --exclude "https://sigmahq.io/*" docs/
           fail: true
 
       - name: Validate Mermaid diagrams

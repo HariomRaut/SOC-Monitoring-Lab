@@ -146,7 +146,6 @@
   when: indexer_health.json.status in ['green', 'yellow']
 
 - name: Configure snapshot repository (optional)
-  when: backup_enabled | default(false)
   block:
     - name: Create backup directory
       ansible.builtin.file:
@@ -171,6 +170,7 @@
           settings:
             location: /mnt/backups/wazuh
             compress: true
+  when: backup_enabled | default(false)
 
 - name: Display Indexer info
   ansible.builtin.debug:
