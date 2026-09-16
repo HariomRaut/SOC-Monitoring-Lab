@@ -1,5 +1,6 @@
 skip_list:
   - run-once
+  - role-name
 exclude_paths:
   - .git/
   - .github/
