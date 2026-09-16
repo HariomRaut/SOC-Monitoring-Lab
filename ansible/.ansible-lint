@@ -1,0 +1,7 @@
+[ansible-lint]
+skip_list:
+  - run-once
+exclude_paths:
+  - .git/
+  - .github/
+  - node_modules/
