@@ -19,10 +19,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install linting tools
+      - name: Install Python linting tools
         run: |
-          pip install ansible-lint yamllint markdownlint-cli2 shellcheck-py
+          pip install ansible-lint yamllint
           sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node.js linting tools
+        run: |
+          npm install -g markdownlint-cli
+          sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Lint Ansible playbooks
         run: |
@@ -38,7 +48,7 @@ jobs:
 
       - name: Lint Markdown files
         run: |
-          markdownlint-cli2 "**/*.md" "#node_modules"
+          markdownlint "**/*.md" --ignore node_modules
 
       - name: Lint Shell scripts
         run: |
@@ -104,33 +114,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install docsify
-        run: npm install -g docsify-cli
-
-      - name: Build documentation
+      - name: Build documentation (no-build approach)
         run: |
-          mkdir -p docs-site
-          cp -r docs/* docs-site/
-          cp README.md docs-site/
-          echo 'loadSidebar: true' > docs-site/_sidebar.md
-          echo '* [Home](README.md)' >> docs-site/_sidebar.md
-          echo '* [Setup](SETUP.md)' >> docs-site/_sidebar.md
-          echo '* [Rules](RULES.md)' >> docs-site/_sidebar.md
-          echo '* [Dashboards](DASHBOARDS.md)' >> docs-site/_sidebar.md
-          echo '* [Runbook](RUNBOOK.md)' >> docs-site/_sidebar.md
-          echo '* [Kali Integration](KALI_INTEGRATION.md)' >> docs-site/_sidebar.md
+          # GitHub Pages serves docs/ folder directly - no build needed
+          # Just verify the docs folder exists and has content
+          ls -la docs/
+          echo "Documentation ready for GitHub Pages (served from docs/ folder)"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs-site
+          publish_dir: ./docs
           destination_dir: /docs
 
   release:
