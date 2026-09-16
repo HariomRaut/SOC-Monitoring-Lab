@@ -24,7 +24,7 @@ rules:
     min-spaces-inside: 0
     max-spaces-inside: 0
   key-ordering:
-    level: disable
+    level: disabled
   truthy:
     allowed-values: ["true", "false"]
     check-keys: false
