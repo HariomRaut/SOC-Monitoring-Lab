@@ -1,0 +1,53 @@
+---
+# Wazuh Version
+wazuh_version: "4.9.2"
+
+# Network Configuration
+manager_ip: "10.10.10.10"
+indexer_ip: "10.10.10.11"
+dashboard_ip: "10.10.10.12"
+
+# Credentials - CHANGE THESE FOR PRODUCTION!
+# Encrypt with: ansible-vault encrypt group_vars/all.yml
+indexer_admin_password: "ChangeMe_Indexer_Admin_2026!"
+dashboard_password: "ChangeMe_Dashboard_2026!"
+wazuh_api_password: "ChangeMe_Wazuh_API_2026!"
+wazuh_wui_password: "ChangeMe_Wazuh_WUI_2026!"
+
+# Email Alerting (Optional)
+smtp_server: "smtp.gmail.com"
+smtp_port: 587
+smtp_user: "your-email@gmail.com"
+smtp_password: "your-app-password"
+alert_email_to: "analyst@yourdomain.com"
+alert_email_from: "wazuh@lab.local"
+
+# Agent Enrollment
+agent_auth_port: 1515
+agent_server_port: 1514
+
+# Indexer Configuration
+indexer_heap_size: "3g"
+indexer_cluster_name: "wazuh-cluster"
+indexer_node_name: "indexer-01"
+
+# Manager Configuration
+manager_cluster_name: "wazuh-cluster"
+manager_node_name: "manager-01"
+manager_node_type: "master"
+
+# Dashboard Configuration
+dashboard_server_host: "0.0.0.0"
+dashboard_server_port: 5601
+
+# Suricata Configuration (on ubuntu-agent)
+suricata_interface: "eth1"
+suricata_home_net: "10.10.10.0/24"
+
+# Custom Rules
+custom_rules_enabled: true
+
+# Backup Configuration
+backup_enabled: true
+backup_schedule: "0 2 * * *"  # Daily at 2 AM
+backup_retention_days: 30

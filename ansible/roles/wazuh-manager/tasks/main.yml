@@ -1,0 +1,188 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - apt-transport-https
+      - software-properties-common
+      - python3-pip
+    state: present
+    update_cache: true
+
+- name: Add Wazuh repository key
+  apt_key:
+    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    state: present
+
+- name: Add Wazuh repository
+  apt_repository:
+    repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
+    state: present
+    filename: wazuh
+
+- name: Install Wazuh Manager
+  apt:
+    name: "wazuh-manager={{ wazuh_version }}-1"
+    state: present
+    update_cache: true
+
+- name: Install Filebeat
+  apt:
+    name: "filebeat=8.11.0"
+    state: present
+    update_cache: true
+
+- name: Generate certificates for Manager
+  block:
+    - name: Create certs directory
+      file:
+        path: /var/ossec/etc
+        state: directory
+        mode: '0750'
+        owner: ossec
+        group: ossec
+
+    - name: Download cert generation tool
+      get_url:
+        url: https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-manager/wazuh-manager-certs-tool
+        dest: /usr/local/bin/wazuh-manager-certs-tool
+        mode: '0755'
+
+    - name: Generate Manager certificates
+      command: /usr/local/bin/wazuh-manager-certs-tool -A -n {{ manager_node_name }} -o /var/ossec/etc
+      args:
+        creates: /var/ossec/etc/sslmanager.pem
+      become: true
+      become_user: ossec
+
+- name: Configure Wazuh Manager (ossec.conf)
+  template:
+    src: ossec.conf.j2
+    dest: /var/ossec/etc/ossec.conf
+    owner: ossec
+    group: ossec
+    mode: '0640'
+  notify: Restart Wazuh Manager
+
+- name: Configure Filebeat for Wazuh
+  template:
+    src: filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Filebeat
+
+- name: Enable Filebeat Wazuh module
+  command: filebeat modules enable wazuh
+  args:
+    creates: /etc/filebeat/modules.d/wazuh.yml.disabled
+
+- name: Copy custom rules
+  copy:
+    src: ../../../rules/local_rules.xml
+    dest: /var/ossec/etc/rules/local_rules.xml
+    owner: ossec
+    group: ossec
+    mode: '0640'
+  when: custom_rules_enabled | default(true)
+  notify: Restart Wazuh Manager
+
+- name: Enable and start Wazuh Manager
+  systemd:
+    name: wazuh-manager
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Enable and start Filebeat
+  systemd:
+    name: filebeat
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Start agent-auth daemon for enrollment
+  systemd:
+    name: wazuh-agent-auth
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Create agent-auth systemd service
+  copy:
+    dest: /etc/systemd/system/wazuh-agent-auth.service
+    content: |
+      [Unit]
+      Description=Wazuh Agent Authentication Service
+      After=network.target wazuh-manager.service
+      Requires=wazuh-manager.service
+
+      [Service]
+      Type=simple
+      User=ossec
+      Group=ossec
+      ExecStart=/var/ossec/bin/agent-auth -m {{ manager_ip }} -p {{ agent_auth_port }} -v
+      Restart=always
+      RestartSec=10
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Reload systemd
+
+- name: Wait for Manager API to be ready
+  uri:
+    url: "https://{{ manager_ip }}:55000"
+    user: wazuh-wui
+    password: "{{ wazuh_wui_password }}"
+    validate_certs: false
+    status_code: 200
+  register: manager_api
+  until: manager_api.status == 200
+  retries: 30
+  delay: 10
+
+- name: Create Wazuh API users
+  block:
+    - name: Create wazuh-wui user
+      uri:
+        url: "https://{{ manager_ip }}:55000/security/users/wazuh-wui"
+        method: PUT
+        user: wazuh-wui
+        password: "{{ wazuh_wui_password }}"
+        validate_certs: false
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          password: "{{ wazuh_wui_password }}"
+          roles: ["wazuh-wui"]
+        status_code: 200, 201
+
+    - name: Create wazuh-user for API access
+      uri:
+        url: "https://{{ manager_ip }}:55000/security/users/wazuh-api"
+        method: PUT
+        user: wazuh-wui
+        password: "{{ wazuh_wui_password }}"
+        validate_certs: false
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          password: "{{ wazuh_api_password }}"
+          roles: ["wazuh-api"]
+        status_code: 200, 201
+
+- name: Display Manager info
+  debug:
+    msg: |
+      Wazuh Manager deployed successfully!
+      - API: https://{{ manager_ip }}:55000
+      - Agent enrollment: {{ manager_ip }}:{{ agent_auth_port }}
+      - Agent logs: {{ manager_ip }}:{{ agent_server_port }}
+      - Filebeat: Enabled with Wazuh module
+      - Custom rules: Deployed

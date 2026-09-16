@@ -1,0 +1,83 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - apt-transport-https
+      - software-properties-common
+    state: present
+    update_cache: true
+
+- name: Add Wazuh repository key
+  apt_key:
+    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    state: present
+
+- name: Add Wazuh repository
+  apt_repository:
+    repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
+    state: present
+    filename: wazuh
+
+- name: Install Wazuh Agent
+  apt:
+    name: "wazuh-agent={{ wazuh_version }}-1"
+    state: present
+    update_cache: true
+
+- name: Configure Wazuh Agent
+  template:
+    src: ossec.conf.j2
+    dest: /var/ossec/etc/ossec.conf
+    owner: ossec
+    group: ossec
+    mode: '0640'
+  notify: Restart Wazuh Agent
+
+- name: Enable and start Wazuh Agent
+  systemd:
+    name: wazuh-agent
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for agent to enroll (if not already)
+  block:
+    - name: Check if agent is already enrolled
+      stat:
+        path: /var/ossec/etc/client.keys
+      register: client_keys
+
+    - name: Enroll agent via agent-auth
+      command: /var/ossec/bin/agent-auth -m {{ manager_ip }} -p {{ agent_auth_port }} -A {{ agent_name }}
+      when: not client_keys.stat.exists
+      register: enroll_result
+      ignore_errors: true
+
+    - name: Restart agent after enrollment
+      systemd:
+        name: wazuh-agent
+        state: restarted
+      when: not client_keys.stat.exists
+
+- name: Verify agent connection
+  uri:
+    url: "https://{{ manager_ip }}:55000/agents?name={{ agent_name }}"
+    user: wazuh-wui
+    password: "{{ wazuh_wui_password }}"
+    validate_certs: false
+    status_code: 200
+  register: agent_check
+  until: agent_check.json.data.affected_items | length > 0 and agent_check.json.data.affected_items[0].status == "active"
+  retries: 10
+  delay: 5
+
+- name: Display Agent info
+  debug:
+    msg: |
+      Wazuh Agent deployed successfully!
+      - Agent Name: {{ agent_name }}
+      - Agent IP: {{ agent_ip }}
+      - Manager: {{ manager_ip }}:{{ agent_server_port }}
+      - Status: Active

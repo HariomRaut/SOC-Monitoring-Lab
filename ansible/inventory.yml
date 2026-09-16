@@ -1,0 +1,40 @@
+all:
+  vars:
+    ansible_user: socadmin
+    ansible_become: true
+    ansible_become_user: root
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+  children:
+    manager:
+      hosts:
+        wazuh-manager:
+          ansible_host: 10.10.10.10
+          node_type: master
+          ansible_port: 22
+
+    indexer:
+      hosts:
+        wazuh-indexer:
+          ansible_host: 10.10.10.11
+          ansible_port: 22
+
+    dashboard:
+      hosts:
+        wazuh-dashboard:
+          ansible_host: 10.10.10.12
+          ansible_port: 22
+
+    agents:
+      hosts:
+        ubuntu-agent:
+          ansible_host: 10.10.10.20
+          agent_name: ubuntu-agent
+          agent_ip: 10.10.10.20
+          ansible_port: 22
+        kali-linux:
+          ansible_host: 10.10.10.30
+          agent_name: kali-linux
+          agent_ip: 10.10.10.30
+          ansible_port: 22

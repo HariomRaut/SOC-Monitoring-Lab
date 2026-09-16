@@ -1,0 +1,46 @@
+cluster.name: {{ indexer_cluster_name }}
+node.name: {{ indexer_node_name }}
+network.host: {{ indexer_ip }}
+http.port: 9200
+transport.port: 9300
+discovery.type: single-node
+
+# Paths
+path.data: /var/lib/wazuh-indexer
+path.logs: /var/log/wazuh-indexer
+
+# Security
+plugins.security.enabled: true
+plugins.security.ssl.transport.enabled: true
+plugins.security.ssl.http.enabled: true
+plugins.security.ssl.transport.pemcert_filepath: /etc/wazuh-indexer/certs/{{ indexer_node_name }}.pem
+plugins.security.ssl.transport.pemkey_filepath: /etc/wazuh-indexer/certs/{{ indexer_node_name }}-key.pem
+plugins.security.ssl.transport.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
+plugins.security.ssl.http.pemcert_filepath: /etc/wazuh-indexer/certs/{{ indexer_node_name }}.pem
+plugins.security.ssl.http.pemkey_filepath: /etc/wazuh-indexer/certs/{{ indexer_node_name }}-key.pem
+plugins.security.ssl.http.pemtrustedcas_filepath: /etc/wazuh-indexer/certs/root-ca.pem
+plugins.security.allow_unsafe_democertificates: false
+plugins.security.authcz.admin_dn:
+  - "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US"
+
+# Performance
+bootstrap.memory_lock: true
+indices.memory.index_buffer_size: 30%
+indices.memory.min_index_buffer_size: 96mb
+thread_pool.write.queue_size: 10000
+
+# Index Lifecycle Management
+plugins.index_state_management.enabled: true
+
+# Monitoring
+http.max_content_length: 200mb
+http.max_initial_line_length: 32kb
+http.max_header_count: 128
+
+# Node roles (single node does everything)
+node.roles: [ "data", "ingest", "master", "ml", "remote_cluster_client" ]
+
+# Gateway
+gateway.recover_after_nodes: 1
+gateway.expected_nodes: 1
+gateway.recover_after_time: 5m

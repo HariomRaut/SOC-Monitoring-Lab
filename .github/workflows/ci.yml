@@ -1,0 +1,160 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-validate:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          pip install ansible-lint yamllint markdownlint-cli2 shellcheck-py
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: Lint Ansible playbooks
+        run: |
+          cd ansible
+          ansible-lint site.yml
+          ansible-lint roles/
+
+      - name: Lint YAML files
+        run: |
+          yamllint .github/workflows/
+          yamllint ansible/
+          yamllint docs/
+
+      - name: Lint Markdown files
+        run: |
+          markdownlint-cli2 "**/*.md" "#node_modules"
+
+      - name: Lint Shell scripts
+        run: |
+          find . -name "*.sh" -type f | xargs shellcheck
+
+      - name: Validate XML rules
+        run: |
+          xmllint --noout rules/local_rules.xml
+
+      - name: Validate dashboard JSON
+        run: |
+          for file in dashboards/*.ndjson; do
+            echo "Validating $file"
+            while IFS= read -r line; do
+              echo "$line" | jq . > /dev/null
+            done < "$file"
+          done
+
+  test-ansible-syntax:
+    name: Test Ansible Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          pip install ansible-core==2.16.*
+
+      - name: Check Ansible syntax
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.yml site.yml --syntax-check
+          ansible-playbook -i inventory.yml site.yml --list-tasks
+
+  validate-documentation:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for broken links
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: --verbose --max-concurrency 10 docs/
+
+      - name: Validate Mermaid diagrams
+        run: |
+          # Check if mermaid diagrams in ARCHITECTURE.md are valid
+          grep -A 50 "mermaid" ARCHITECTURE.md | head -50
+
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install docsify
+        run: npm install -g docsify-cli
+
+      - name: Build documentation
+        run: |
+          mkdir -p docs-site
+          cp -r docs/* docs-site/
+          cp README.md docs-site/
+          echo 'loadSidebar: true' > docs-site/_sidebar.md
+          echo '* [Home](README.md)' >> docs-site/_sidebar.md
+          echo '* [Setup](SETUP.md)' >> docs-site/_sidebar.md
+          echo '* [Rules](RULES.md)' >> docs-site/_sidebar.md
+          echo '* [Dashboards](DASHBOARDS.md)' >> docs-site/_sidebar.md
+          echo '* [Runbook](RUNBOOK.md)' >> docs-site/_sidebar.md
+          echo '* [Kali Integration](KALI_INTEGRATION.md)' >> docs-site/_sidebar.md
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs-site
+          destination_dir: /docs
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint-and-validate, test-ansible-syntax, validate-documentation]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        run: |
+          git log --oneline --since="$(git log -1 --format=%ai HEAD~10)" --format="* %s" > CHANGELOG.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            rules/local_rules.xml
+            dashboards/*.ndjson
+            attack-scenarios/*.sh
+            scripts/*.sh
+          generate_release_notes: true

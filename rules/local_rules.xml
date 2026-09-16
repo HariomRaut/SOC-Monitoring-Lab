@@ -1,0 +1,208 @@
+<!--
+  Custom Wazuh Detection Rules
+  Deployed to: /var/ossec/etc/rules/local_rules.xml
+  Version: 1.0
+  Author: Hariom Raut
+  MITRE ATT&CK mapped rules for SOC Monitoring Lab
+-->
+
+<group name="local,custom,">
+
+  <!-- SSH Brute Force Detection -->
+  <rule id="100001" level="12" frequency="6" timeframe="60">
+    <if_matched_sid>5716</if_matched_sid>
+    <same_source_ip />
+    <description>SSH Brute Force Attempt - Multiple failed logins from same IP</description>
+    <mitre>
+      <id>T1110.001</id>
+      <tactic>Credential Access</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Sudo Abuse Detection -->
+  <rule id="100002" level="10" frequency="3" timeframe="300">
+    <if_matched_sid>5402</if_matched_sid>
+    <same_source_ip />
+    <description>Sudo Abuse - Multiple sudo executions without prior auth</description>
+    <mitre>
+      <id>T1548.003</id>
+      <tactic>Privilege Escalation</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Web Shell Upload Detection -->
+  <rule id="100003" level="13" frequency="1" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <field name="http.method">POST</field>
+    <regex>\.(php|asp|aspx|jsp|jspx|phtml|php3|php4|php5|php7|phps|pht)\s*$</regex>
+    <description>Web Shell Upload - Executable file uploaded via POST</description>
+    <mitre>
+      <id>T1505.003</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Cron Persistence Detection -->
+  <rule id="100004" level="11" frequency="1" timeframe="3600">
+    <if_matched_sid>530</if_matched_sid>
+    <field name="user">root|www-data|nginx|apache</field>
+    <description>Persistence via Cron - New cron job for privileged user</description>
+    <mitre>
+      <id>T1053.003</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+  </rule>
+
+  <!-- DNS Exfiltration Detection -->
+  <rule id="100005" level="12" frequency="50" timeframe="60">
+    <if_matched_sid>87001</if_matched_sid>
+    <same_source_ip />
+    <description>DNS Exfiltration - High volume DNS queries from single host</description>
+    <mitre>
+      <id>T1048</id>
+      <tactic>Exfiltration</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Additional: Suspicious Process Execution -->
+  <rule id="100006" level="10" frequency="5" timeframe="300">
+    <if_matched_sid>530</if_matched_sid>
+    <field name="program_name">nc|ncat|netcat|socat|bash|sh|python|perl|ruby|php</field>
+    <description>Suspicious Process Execution - Potential reverse shell</description>
+    <mitre>
+      <id>T1059.004</id>
+      <tactic>Execution</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Unauthorized Sudoers Modification -->
+  <rule id="100007" level="13" frequency="1" timeframe="3600">
+    <if_matched_sid>550</if_matched_sid>
+    <field name="file">/etc/sudoers|/etc/sudoers.d/</field>
+    <description>Unauthorized Sudoers File Modification</description>
+    <mitre>
+      <id>T1548.003</id>
+      <tactic>Privilege Escalation</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Additional: SSH Key Injection -->
+  <rule id="100008" level="12" frequency="1" timeframe="3600">
+    <if_matched_sid>550</if_matched_sid>
+    <field name="file">.ssh/authorized_keys</field>
+    <description>SSH Authorized Keys Modified - Potential Persistence</description>
+    <mitre>
+      <id>T1098.004</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Additional: Web Application Attack - SQL Injection -->
+  <rule id="100009" level="12" frequency="3" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <regex>(union|select|insert|update|delete|drop|exec|script|alert|onerror|onload)</regex>
+    <description>Web Application Attack - SQL Injection Attempt</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Web Application Attack - XSS -->
+  <rule id="100010" level="11" frequency="3" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <regex>(<script|javascript:|onerror=|onload=|alert\(|document\.cookie)</regex>
+    <description>Web Application Attack - Cross-Site Scripting (XSS) Attempt</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Local File Inclusion (LFI) -->
+  <rule id="100011" level="11" frequency="3" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <regex>(\.\./|\.\.%2f|%2e%2e%2f|/etc/passwd|/etc/shadow|/proc/self/environ)</regex>
+    <description>Web Application Attack - Local File Inclusion (LFI) Attempt</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Remote File Inclusion (RFI) -->
+  <rule id="100012" level="12" frequency="3" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <regex>(http://|https://|ftp://|php://input|data://|expect://)</regex>
+    <description>Web Application Attack - Remote File Inclusion (RFI) Attempt</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Command Injection -->
+  <rule id="100013" level="13" frequency="1" timeframe="60">
+    <if_matched_sid>31151</if_matched_sid>
+    <regex>(;|&&|\||`|\$\(|\|\|)</regex>
+    <description>Web Application Attack - Command Injection Attempt</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Additional: Suspicious File Download -->
+  <rule id="100014" level="10" frequency="5" timeframe="300">
+    <if_matched_sid>31151</if_matched_sid>
+    <field name="http.method">GET</field>
+    <regex>\.(exe|dll|bat|cmd|ps1|sh|py|pl|rb|jar|war|ear)\s*$</regex>
+    <description>Suspicious Executable File Download</description>
+    <mitre>
+      <id>T1105</id>
+      <tactic>Command and Control</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Brute Force on Other Services -->
+  <rule id="100015" level="11" frequency="5" timeframe="60">
+    <if_matched_sid>5712</if_matched_sid>
+    <same_source_ip />
+    <description>Brute Force Attack - Multiple failed logins (non-SSH)</description>
+    <mitre>
+      <id>T1110.001</id>
+      <tactic>Credential Access</tactic>
+    </mitre>
+  </rule>
+
+  <!-- Additional: Privilege Escalation via Kernel Exploit -->
+  <rule id="100016" level="14" frequency="1" timeframe="3600">
+    <if_matched_sid>530</if_matched_sid>
+    <regex>(dirtycow|dirty_cow|CVE-2016-5195|CVE-2017-1000112|CVE-2019-13272|CVE-2021-4034|polkit|pwnkit)</regex>
+    <description>Privilege Escalation - Known Kernel Exploit Attempt</description>
+    <mitre>
+      <id>T1068</id>
+      <tactic>Privilege Escalation</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+  <!-- Additional: Container Escape Indicators -->
+  <rule id="100017" level="13" frequency="1" timeframe="3600">
+    <if_matched_sid>530</if_matched_sid>
+    <regex>(docker|containerd|runc|/proc/self/cgroup|/sys/fs/cgroup|/.dockerenv)</regex>
+    <description>Container Escape Attempt Detected</description>
+    <mitre>
+      <id>T1611</id>
+      <tactic>Escape to Host</tactic>
+    </mitre>
+    <options>alert_by_email</options>
+  </rule>
+
+</group>

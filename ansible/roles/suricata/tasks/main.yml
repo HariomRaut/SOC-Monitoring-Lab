@@ -1,0 +1,54 @@
+---
+- name: Install Suricata
+  apt:
+    name:
+      - suricata
+      - suricata-update
+    state: present
+    update_cache: true
+
+- name: Configure Suricata
+  template:
+    src: suricata.yaml.j2
+    dest: /etc/suricata/suricata.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Suricata
+
+- name: Update Suricata rules
+  command: suricata-update
+  args:
+    creates: /var/lib/suricata/rules/suricata.rules
+  notify: Restart Suricata
+
+- name: Configure Filebeat for Suricata Eve logs
+  template:
+    src: filebeat-suricata.yml.j2
+    dest: /etc/filebeat/modules.d/suricata.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Filebeat
+
+- name: Enable and start Suricata
+  systemd:
+    name: suricata
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Verify Suricata is running
+  command: suricata --build-info
+  register: suricata_version
+  changed_when: false
+
+- name: Display Suricata info
+  debug:
+    msg: |
+      Suricata IDS deployed successfully!
+      - Interface: {{ suricata_interface }}
+      - Home Network: {{ suricata_home_net }}
+      - Eve JSON: /var/log/suricata/eve.json
+      - Version: {{ suricata_version.stdout_lines[0] }}
+      - Rules updated: Yes

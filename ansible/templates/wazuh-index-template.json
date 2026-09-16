@@ -1,0 +1,78 @@
+{
+  "index_patterns": ["wazuh-alerts-*", "wazuh-archives-*", "wazuh-monitoring-*", "wazuh-states-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "30s",
+      "index.codec": "best_compression",
+      "index.mapping.total_fields.limit": 2000,
+      "index.lifecycle.name": "wazuh-ilm-policy",
+      "index.lifecycle.rollover_alias": "wazuh-alerts"
+    },
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "agent": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "ip": { "type": "ip" },
+            "version": { "type": "keyword" },
+            "os": {
+              "properties": {
+                "name": { "type": "keyword" },
+                "version": { "type": "keyword" },
+                "platform": { "type": "keyword" }
+              }
+            }
+          }
+        },
+        "rule": {
+          "properties": {
+            "id": { "type": "integer" },
+            "level": { "type": "integer" },
+            "description": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+            "groups": { "type": "keyword" },
+            "firedtimes": { "type": "integer" },
+            "mail": { "type": "boolean" },
+            "mitre": {
+              "properties": {
+                "id": { "type": "keyword" },
+                "tactic": { "type": "keyword" },
+                "technique": { "type": "keyword" }
+              }
+            }
+          }
+        },
+        "location": { "type": "geo_point" },
+        "geoip": {
+          "properties": {
+            "country_name": { "type": "keyword" },
+            "city_name": { "type": "keyword" },
+            "latitude": { "type": "float" },
+            "longitude": { "type": "float" }
+          }
+        },
+        "data": { "type": "object", "enabled": true },
+        "full_log": { "type": "text" }
+      }
+    },
+    "aliases": {
+      "wazuh-alerts": {
+        "is_write_index": true
+      }
+    }
+  }
+}

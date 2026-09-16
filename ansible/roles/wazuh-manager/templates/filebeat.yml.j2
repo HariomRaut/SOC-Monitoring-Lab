@@ -1,0 +1,53 @@
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/suricata/eve.json
+  json.keys_under_root: true
+  json.add_error_key: true
+  tags: ["suricata", "ids"]
+
+output.logstash:
+  enabled: false
+
+output.elasticsearch:
+  enabled: false
+
+output.file:
+  enabled: false
+
+# Wazuh module configuration
+filebeat.modules:
+- module: wazuh
+  alerts:
+    enabled: true
+    var.paths: ["/var/ossec/logs/alerts/alerts.json"]
+  archives:
+    enabled: true
+    var.paths: ["/var/ossec/logs/archives/archives.json"]
+
+# Output to Wazuh Manager (via Logstash format)
+output.logstash:
+  enabled: true
+  hosts: ["{{ manager_ip }}:5044"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/var/ossec/etc/root-ca.pem"]
+  ssl.certificate: "/var/ossec/etc/sslmanager.pem"
+  ssl.key: "/var/ossec/etc/sslmanager-key.pem"
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644

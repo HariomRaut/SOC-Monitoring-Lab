@@ -1,0 +1,73 @@
+# VirtualBox VMs
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+VirtualBox VMs/
+
+# Logs
+*.log
+logs/
+*.out
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# Ansible
+*.retry
+.vault_pass
+vault.yml
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Certificates/Keys
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Package managers
+node_modules/
+vendor/
+
+# Test/coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Documentation build
+docs/_build/
+site/

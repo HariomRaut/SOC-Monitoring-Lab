@@ -1,0 +1,97 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - apt-transport-https
+      - software-properties-common
+    state: present
+    update_cache: true
+
+- name: Add Wazuh repository key
+  apt_key:
+    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    state: present
+
+- name: Add Wazuh repository
+  apt_repository:
+    repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
+    state: present
+    filename: wazuh
+
+- name: Install Wazuh Dashboard
+  apt:
+    name: "wazuh-dashboard={{ wazuh_version }}-1"
+    state: present
+    update_cache: true
+
+- name: Create certificates directory
+  file:
+    path: /etc/wazuh-dashboard/certs
+    state: directory
+    mode: '0750'
+    owner: wazuh-dashboard
+    group: wazuh-dashboard
+
+- name: Copy Indexer CA cert to Dashboard
+  copy:
+    src: "{{ playbook_dir }}/roles/wazuh-indexer/templates/root-ca.pem"
+    dest: /etc/wazuh-dashboard/certs/root-ca.pem
+    owner: wazuh-dashboard
+    group: wazuh-dashboard
+    mode: '0640'
+  when: false
+  # Note: In practice, copy the actual generated cert from Indexer
+  # This is a placeholder - you'll need to copy the real root-ca.pem
+
+- name: Generate Dashboard certificates
+  block:
+    - name: Download cert generation tool
+      get_url:
+        url: https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-dashboard/wazuh-dashboard-certs-tool
+        dest: /usr/local/bin/wazuh-dashboard-certs-tool
+        mode: '0755'
+
+    - name: Generate Dashboard certificates
+      command: /usr/local/bin/wazuh-dashboard-certs-tool -A -n {{ inventory_hostname }} -o /etc/wazuh-dashboard/certs
+      args:
+        creates: /etc/wazuh-dashboard/certs/{{ inventory_hostname }}.pem
+      become: true
+      become_user: wazuh-dashboard
+
+- name: Configure Wazuh Dashboard
+  template:
+    src: opensearch_dashboards.yml.j2
+    dest: /etc/wazuh-dashboard/opensearch_dashboards.yml
+    owner: wazuh-dashboard
+    group: wazuh-dashboard
+    mode: '0640'
+  notify: Restart Wazuh Dashboard
+
+- name: Enable and start Wazuh Dashboard
+  systemd:
+    name: wazuh-dashboard
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for Dashboard to be ready
+  uri:
+    url: "https://{{ dashboard_ip }}:5601/api/status"
+    validate_certs: false
+    status_code: 200
+  register: dashboard_status
+  until: dashboard_status.status == 200
+  retries: 30
+  delay: 10
+
+- name: Display Dashboard info
+  debug:
+    msg: |
+      Wazuh Dashboard deployed successfully!
+      - URL: https://{{ dashboard_ip }}:5601
+      - User: admin
+      - Password: {{ dashboard_password }}
+      - Indexer: https://{{ indexer_ip }}:9200
+      - Manager API: https://{{ manager_ip }}:55000

@@ -1,0 +1,52 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ansible
+        run: |
+          pip install ansible-core==2.16.*
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.ANSIBLE_HOSTS }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.yml site.yml \
+            -e "ansible_user=${{ secrets.ANSIBLE_USER }}" \
+            -e "ansible_become_pass=${{ secrets.ANSIBLE_BECOME_PASS }}"
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+
+      - name: Verify deployment
+        run: |
+          ./scripts/health-check.sh
+        env:
+          MANAGER_IP: ${{ secrets.MANAGER_IP }}
+          INDEXER_IP: ${{ secrets.INDEXER_IP }}
+          DASHBOARD_IP: ${{ secrets.DASHBOARD_IP }}
+          WUI_PASS: ${{ secrets.WUI_PASS }}
+          ADMIN_PASS: ${{ secrets.ADMIN_PASS }}

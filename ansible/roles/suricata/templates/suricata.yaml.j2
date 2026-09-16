@@ -1,0 +1,220 @@
+%YAML 1.1
+---
+vars:
+  address-groups:
+    HOME_NET: "[{{ suricata_home_net }}]"
+    EXTERNAL_NET: "!$HOME_NET"
+    HTTP_SERVERS: "$HOME_NET"
+    SMTP_SERVERS: "$HOME_NET"
+    SQL_SERVERS: "$HOME_NET"
+    DNS_SERVERS: "$HOME_NET"
+    TELNET_SERVERS: "$HOME_NET"
+    AIM_SERVERS: "$HOME_NET"
+    DC_SERVERS: "$HOME_NET"
+    DNP3_SERVER: "$HOME_NET"
+    DNP3_CLIENT: "$HOME_NET"
+    MODBUS_CLIENT: "$HOME_NET"
+    MODBUS_SERVER: "$HOME_NET"
+    ENIP_CLIENT: "$HOME_NET"
+    ENIP_SERVER: "$HOME_NET"
+  port-groups:
+    HTTP_PORTS: "80,8080,8081,8000,8888,3128,8088,8090,9000,9080,9090,9091,9443,18080,18081"
+    SHELLCODE_PORTS: "!80,!8080,!8081,!8000,!8888,!3128,!8088,!8090,!9000,!9080,!9090,!9091,!9443,!18080,!18081"
+    ORACLE_PORTS: 1521
+    SSH_PORTS: 22
+    DNP3_PORTS: 20000
+    MODBUS_PORTS: 502
+    FILE_DATA_PORTS: "[$HTTP_PORTS,110,143]"
+    FTP_PORTS: 21
+    GENEVE_PORTS: 6081
+    VXLAN_PORTS: 4789
+    TEREDO_PORTS: 3544
+
+default-log-level: info
+default-log-format: "[%i] %t - (%f:%l) <%d> (%n) -- "
+
+# Output configuration
+outputs:
+  - fast:
+      enabled: yes
+      filename: /var/log/suricata/fast.log
+      append: yes
+
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      types:
+        - alert:
+            payload: yes
+            payload-printable: yes
+            packet: yes
+            metadata: yes
+            tagged-packets: yes
+        - http:
+            extended: yes
+            custom: [Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, Cookie, Referer, User-Agent, X-Forwarded-For]
+        - dns:
+            query: yes
+            answer: yes
+            custom: [class, opcode, rcode, qdcount, ancount, nscount, arcount]
+        - tls:
+            extended: yes
+            custom: [subject, issuer, serial, fingerprint, version, not_before, not_after]
+        - files:
+            force-magic: no
+            force-hash: [md5, sha1, sha256]
+        - ssh
+        - smtp
+        - flow
+        - netflow
+        - stats:
+            totals: yes
+            threads: no
+            deltas: no
+        - metadata
+        - app-layer:
+            enabled: yes
+
+  - unified2-alert:
+      enabled: no
+      filename: /var/log/suricata/unified2.alert
+      limit: 128
+
+  - stats:
+      enabled: yes
+      interval: 8
+      append: yes
+      filename: /var/log/suricata/stats.log
+
+# Detection engine
+detect:
+  profile: medium
+  custom-values:
+    toclient-groups: 3
+    toserver-groups: 25
+  sgh-mpm-context: auto
+  inspection-recursion-limit: 3000
+
+# Threading
+threading:
+  set-cpu-affinity: no
+  cpu-affinity:
+    - management-cpu-set:
+        cpu: [ 0 ]
+    - receive-cpu-set:
+        cpu: [ 0 ]
+    - worker-cpu-set:
+        cpu: [ "all" ]
+  detect-thread-ratio: 1.5
+
+# Capture
+af-packet:
+  - interface: {{ suricata_interface }}
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+    ring-size: 200000
+    block-size: 32768
+    block-timeout: 10
+    copy-mode: ips
+    copy-iface: {{ suricata_interface }}
+    buffer-size: 65535
+
+# Pcap-file (for offline analysis)
+pcap-file:
+  checksum-checks: auto
+
+# App Layer Parsers
+app-layer:
+  protocols:
+    http:
+      enabled: yes
+      memcap: 64mb
+      libhtp:
+        default-config:
+          personality: IDS
+          request-body-limit: 100kb
+          response-body-limit: 100kb
+          request-body-minimal-inspect-size: 32kb
+          response-body-minimal-inspect-size: 32kb
+          request-body-decompress-layer-limit: 2
+          response-body-decompress-layer-limit: 2
+          randomize-inspection-sizes: yes
+      custom-headers:
+        - X-Forwarded-For
+        - X-Real-IP
+    dns:
+      enabled: yes
+      memcap: 16mb
+    tls:
+      enabled: yes
+      detection-ports:
+        dp: 443
+    ssh:
+      enabled: yes
+    smtp:
+      enabled: yes
+      raw-extraction: yes
+    ftp:
+      enabled: yes
+    nfs:
+      enabled: yes
+    krb5:
+      enabled: yes
+    snmp:
+      enabled: yes
+    rdp:
+      enabled: yes
+    mqtt:
+      enabled: yes
+    ikev2:
+      enabled: yes
+    ntp:
+      enabled: yes
+    dhcp:
+      enabled: yes
+    quic:
+      enabled: yes
+    tftp:
+      enabled: yes
+    ntlm:
+      enabled: yes
+
+# Rule files
+rule-files:
+  - suricata.rules
+  - /etc/suricata/rules/*.rules
+
+default-rule-path: /etc/suricata/rules
+rule-vars: {}
+
+# Host OS policy for defrag
+host-os-policy:
+  linux: [0, 0, 0, 0]
+  windows: [0, 0, 0, 0]
+  bsd: [0, 0, 0, 0]
+  bsd-right: [0, 0, 0, 0]
+  old-linux: [0, 0, 0, 0]
+  old-solaris: [0, 0, 0, 0]
+  solaris: [0, 0, 0, 0]
+  hpux10: [0, 0, 0, 0]
+  hpux11: [0, 0, 0, 0]
+  irix: [0, 0, 0, 0]
+  macos: [0, 0, 0, 0]
+  vista: [0, 0, 0, 0]
+  windows2k3: [0, 0, 0, 0]
+
+# Classifications
+classification-file: /etc/suricata/classification.config
+
+# Reference config
+reference-config-file: /etc/suricata/reference.config
+
+# Threshold config
+threshold-file: /etc/suricata/threshold.config
+
+# Include
+include: /etc/suricata/disable.conf

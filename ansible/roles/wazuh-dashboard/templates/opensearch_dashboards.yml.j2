@@ -1,0 +1,35 @@
+server.host: "{{ dashboard_server_host }}"
+server.port: {{ dashboard_server_port }}
+server.ssl.enabled: true
+server.ssl.certificate: /etc/wazuh-dashboard/certs/{{ inventory_hostname }}.pem
+server.ssl.key: /etc/wazuh-dashboard/certs/{{ inventory_hostname }}-key.pem
+
+opensearch.hosts: ["https://{{ indexer_ip }}:9200"]
+opensearch.ssl.verificationMode: certificate
+opensearch.ssl.certificateAuthorities: ["/etc/wazuh-dashboard/certs/root-ca.pem"]
+opensearch.username: "admin"
+opensearch.password: "{{ dashboard_password }}"
+
+opensearch.requestHeadersAllowlist: ["authorization", "securitytenant"]
+
+# Wazuh plugin configuration
+wazuh.api.url: "https://{{ manager_ip }}:55000"
+wazuh.api.username: "wazuh-wui"
+wazuh.api.password: "{{ wazuh_wui_password }}"
+
+# Session
+opensearch_security.cookie.secure: true
+opensearch_security.session.ttl: 3600000
+opensearch_security.session.keepalive: true
+
+# Logging
+logging.root.level: info
+logging.json: false
+
+# Performance
+opensearch.shardTimeout: 30000
+opensearch.requestTimeout: 60000
+
+# Security
+opensearch_security.multitenancy.enabled: true
+opensearch_security.readonly_mode.roles: ["readonly"]

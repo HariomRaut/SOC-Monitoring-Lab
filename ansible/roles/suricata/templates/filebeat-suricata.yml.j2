@@ -1,0 +1,13 @@
+- module: suricata
+  eve:
+    enabled: true
+    var.paths: ["/var/log/suricata/eve.json"]
+    var.input: "log"
+    tags: ["suricata", "ids", "nids"]
+  alerts:
+    enabled: true
+    var.paths: ["/var/log/suricata/fast.log"]
+    var.convert_timezone: true
+  stats:
+    enabled: true
+    var.paths: ["/var/log/suricata/stats.log"]

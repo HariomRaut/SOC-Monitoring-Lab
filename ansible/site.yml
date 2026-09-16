@@ -1,0 +1,43 @@
+---
+- name: Deploy Wazuh SIEM Stack
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: wazuh-indexer
+      when: "'indexer' in group_names"
+      tags: indexer
+
+    - role: wazuh-manager
+      when: "'manager' in group_names"
+      tags: manager
+
+    - role: wazuh-dashboard
+      when: "'dashboard' in group_names"
+      tags: dashboard
+
+    - role: wazuh-agent
+      when: "'agents' in group_names"
+      tags: agents
+
+    - role: suricata
+      when: "'agents' in group_names and inventory_hostname == 'ubuntu-agent'"
+      tags: suricata
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: |
+          Wazuh SIEM Deployment Complete!
+          
+          Access Points:
+          - Dashboard: https://{{ dashboard_ip }}:5601 (admin / {{ dashboard_password }})
+          - Manager API: https://{{ manager_ip }}:55000 (wazuh-wui / {{ wazuh_api_password }})
+          - Indexer: https://{{ indexer_ip }}:9200 (admin / {{ indexer_admin_password }})
+          
+          Next Steps:
+          1. Import dashboards from ../dashboards/*.ndjson
+          2. Enroll additional agents with ../scripts/enroll-agent.sh
+          3. Run attack scenarios from ../attack-scenarios/
+      run_once: true
+      delegate_to: localhost

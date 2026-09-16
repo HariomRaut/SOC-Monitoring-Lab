@@ -1,0 +1,52 @@
+---
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+# Admin user
+admin:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: true
+  backend_roles:
+    - "admin"
+  description: "Admin user"
+
+# Wazuh Dashboard user
+wazuh-dashboard:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: false
+  backend_roles:
+    - "wazuh-dashboard"
+  description: "Wazuh Dashboard user"
+
+# Wazuh WUI user
+wazuh-wui:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: false
+  backend_roles:
+    - "wazuh-wui"
+  description: "Wazuh WUI user"
+
+# Logstash user (if using Filebeat/Logstash)
+logstash:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: false
+  backend_roles:
+    - "logstash"
+  description: "Logstash user"
+
+# Beats user (if using Filebeat directly)
+beats:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: false
+  backend_roles:
+    - "beats"
+  description: "Beats user"
+
+# Read-only user for monitoring
+readonly:
+  hash: "$2a$12$VcCDghuNDk01JTu.8k8M..4Vjwvh5.1V8HgH.vx5y5Y8V8V8V8V8V8"
+  reserved: false
+  backend_roles:
+    - "readonly"
+  description: "Read-only user"

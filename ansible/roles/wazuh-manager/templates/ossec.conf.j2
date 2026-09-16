@@ -1,0 +1,127 @@
+<ossec_config>
+  <global>
+    <json_output>yes</json_output>
+    <alerts_log>yes</alerts_log>
+    <logall>no</logall>
+    <logall_json>no</logall_json>
+    <email_notification>{{ email_notification | default(false) | lower }}</email_notification>
+    <smtp_server>{{ smtp_server }}</smtp_server>
+    <smtp_port>{{ smtp_port }}</smtp_port>
+    <email_from>{{ alert_email_from }}</email_from>
+    <email_to>{{ alert_email_to }}</email_to>
+    <email_maxperhour>100</email_maxperhour>
+    <email_log_source>alerts</email_log_source>
+  </global>
+
+  <rules>
+    <include>ruleset/rules/*.xml</include>
+    <include>ruleset/local_rules.xml</include>
+  </rules>
+
+  <auth>
+    <disabled>no</disabled>
+    <port>{{ agent_auth_port }}</port>
+    <use_source_ip>yes</use_source_ip>
+    <force_insert>yes</force_insert>
+    <force_time>0</force_time>
+    <purge>yes</purge>
+    <use_password>no</use_password>
+    <ssl_agent_ca>/var/ossec/etc/root-ca.pem</ssl_agent_ca>
+    <ssl_agent_cert>/var/ossec/etc/sslmanager.pem</ssl_agent_cert>
+    <ssl_agent_key>/var/ossec/etc/sslmanager-key.pem</ssl_agent_key>
+    <ciphers>HIGH:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH</ciphers>
+    <limit_maxagents>10000</limit_maxagents>
+  </auth>
+
+  <cluster>
+    <name>{{ manager_cluster_name }}</name>
+    <node_name>{{ manager_node_name }}</node_name>
+    <node_type>{{ manager_node_type }}</node_type>
+    <key>wazuh-cluster-key-{{ manager_cluster_name }}</key>
+    <interval>2s</interval>
+    <port>1516</port>
+    <bind_addr>{{ manager_ip }}</bind_addr>
+    <nodes>
+      <node>{{ manager_ip }}</node>
+    </nodes>
+    <hidden>no</hidden>
+    <disabled>no</disabled>
+  </cluster>
+
+  <remote>
+    <connection>secure</connection>
+    <port>{{ agent_server_port }}</port>
+    <protocol>tcp</protocol>
+    <allowed_ips>10.10.10.0/24</allowed_ips>
+    <queue_size>131072</queue_size>
+    <max_logs_per_second>1000</max_logs_per_second>
+  </remote>
+
+  <alerts>
+    <log_alert_level>3</log_alert_level>
+    <email_alert_level>10</email_alert_level>
+  </alerts>
+
+  <syscheck>
+    <frequency>43200</frequency>
+    <directories>/etc,/usr/bin,/usr/sbin</directories>
+    <directories>/bin,/sbin</directories>
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/random.seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/utmpx</ignore>
+    <ignore>/etc/wtmpx</ignore>
+    <ignore>/etc/cups/certs</ignore>
+    <ignore>/etc/dumpdates</ignore>
+    <ignore>/etc/svc/volatile</ignore>
+  </syscheck>
+
+  <rootcheck>
+    <frequency>43200</frequency>
+  </rootcheck>
+
+  <wodle name="open-scap">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="cis-cat">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="aws-s3">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="azure-logs">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="gcp-pubsub">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="osquery">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/auth.log</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/syslog</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/dpkg.log</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/apt/history.log</location>
+  </localfile>
+</ossec_config>

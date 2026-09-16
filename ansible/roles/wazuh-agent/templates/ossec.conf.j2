@@ -1,0 +1,85 @@
+<ossec_config>
+  <client>
+    <server>
+      <address>{{ manager_ip }}</address>
+      <port>{{ agent_server_port }}</port>
+      <protocol>tcp</protocol>
+    </server>
+    <config-profile>{{ agent_name }},linux</config-profile>
+    <notify_time>10</notify_time>
+    <time-reconnect>60</time-reconnect>
+    <auto_restart>yes</auto_restart>
+    <crypto_method>aes</crypto_method>
+  </client>
+
+  <syscheck>
+    <frequency>43200</frequency>
+    <directories>/etc,/usr/bin,/usr/sbin</directories>
+    <directories>/bin,/sbin</directories>
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/random.seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/utmpx</ignore>
+    <ignore>/etc/wtmpx</ignore>
+    <ignore>/etc/cups/certs</ignore>
+    <ignore>/etc/dumpdates</ignore>
+    <ignore>/etc/svc/volatile</ignore>
+  </syscheck>
+
+  <rootcheck>
+    <frequency>43200</frequency>
+  </rootcheck>
+
+  <wodle name="open-scap">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="cis-cat">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="aws-s3">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="azure-logs">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="gcp-pubsub">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <wodle name="osquery">
+    <disabled>yes</disabled>
+  </wodle>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/auth.log</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/syslog</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/dpkg.log</location>
+  </localfile>
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/apt/history.log</location>
+  </localfile>
+  <localfile>
+    <log_format>audit</log_format>
+    <location>/var/log/audit/audit.log</location>
+  </localfile>
+  <localfile>
+    <log_format>journalctl</log_format>
+    <location>systemd</location>
+  </localfile>
+</ossec_config>
